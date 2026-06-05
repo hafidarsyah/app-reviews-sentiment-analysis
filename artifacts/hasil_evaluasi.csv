@@ -1,0 +1,4 @@
+Skema,Algoritma,Ekstraksi Fitur,Pembagian Data,Akurasi_Test
+SVC + TF-IDF (80/20),LinearSVC,TF-IDF,80/20,0.8715
+LR + Word2Vec (80/20),Logistic Regression,Word2Vec,80/20,0.8505
+BiLSTM + Embedding (70/30),BiLSTM (Deep Learning),Embedding Layer,70/30,0.8666666746139526
