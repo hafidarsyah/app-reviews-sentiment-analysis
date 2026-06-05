@@ -1,59 +1,64 @@
-# Proyek Analisis Sentimen Ulasan Aplikasi
+# Rice Image Classification (CNN)
 
-Proyek ini merupakan implementasi pemrosesan bahasa alami (*Natural Language Processing* / NLP) untuk melakukan analisis sentimen terhadap ulasan pengguna. Proyek ini dibangun untuk memenuhi kriteria submission akhir, mencakup seluruh alur kerja *Machine Learning* mulai dari pengumpulan data (*scraping*) secara mandiri, prapemrosesan teks, ekstraksi fitur, hingga pelatihan dan evaluasi berbagai arsitektur model.
+Proyek ini merupakan implementasi model *Deep Learning* menggunakan arsitektur **Convolutional Neural Network (CNN)** berbasis `Sequential` untuk mengklasifikasikan 5 varietas beras yang berbeda. Model dikembangkan menggunakan TensorFlow/Keras dan dioptimalkan agar dapat dideploy ke berbagai platform dengan mengonversinya ke format **SavedModel**, **TF-Lite**, dan **TensorFlow.js (TFJS)**.
 
-## Kriteria Penilaian yang Terpenuhi
+Proyek ini disusun dan diselesaikan menggunakan berkas utama `klasifikasi_gambar.ipynb` serta pengelolaan dependensi melalui berkas `requirements.txt`.
 
-*   **Data Hasil Scraping Mandiri:** Menggunakan script khusus untuk melakukan ekstraksi data ulasan aplikasi dengan jumlah sampel awal mencapai 20.000 data.
-*   **Ekstraksi Fitur & Pelabelan Data:** Pelabelan otomatis berdasarkan rating pengguna dimana teks diproses melalui pembersihan regex dan normalisasi kata gaul. Ekstraksi fitur yang digunakan meliputi TF-IDF, Word2Vec, serta Embedding Layer.
-*   **Algoritma Machine Learning:** Melatih dan membandingkan 3 skema model yang berbeda yaitu LinearSVC, Logistic Regression, dan BiLSTM.
-*   **Akurasi Minimal 85%:** Model terbaik menggunakan LinearSVC dengan ekstraksi fitur TF-IDF berhasil mencapai tingkat akurasi testing sebesar 87.15%.
+## 📌 Deskripsi Proyek & Spesifikasi Dataset
 
-## Alur Pemrosesan Data
-
-*   **Prapemrosesan Teks:** Melibatkan proses *lowercasing*, penghapusan URL, *mention*, *hashtag*, normalisasi menggunakan kamus slang bahasa Indonesia, dan penghapusan karakter yang tidak relevan namun mempertahankan tanda seru dan tanya.
-*   **Class Balancing:** Menyaring data netral dan melakukan sampling acak untuk menyeimbangkan distribusi kelas sentimen menjadi 5.000 sampel Positif dan 5.000 sampel Negatif.
-*   **Pelatihan Model:** Data dipisah dengan pembagian berstrata, menggunakan rasio 80/20 untuk model Scikit-Learn dan 70/30 untuk model Deep Learning.
-
-## Perbandingan Hasil Evaluasi Model
-
-| Skema Pelatihan | Algoritma | Ekstraksi Fitur | Pembagian Data | Akurasi Testing |
-| :--- | :--- | :--- | :--- | :--- |
-| **Skema 1 (Terbaik)** | **LinearSVC** | **TF-IDF** | **80/20** | **87.15%** |
-| Skema 2 | Logistic Regression | Word2Vec | 80/20 | 85.25% |
-| Skema 3 | BiLSTM (Deep Learning) | Embedding Layer | 70/30 | 85.53% |
-
-*Data tabel di atas merepresentasikan performa model pada data uji*.
+Proyek ini memenuhi seluruh kriteria submission evaluasi klasifikasi gambar sebagai berikut:
+* **Sumber Dataset:** [Rice Image Dataset (Kaggle)](https://www.kaggle.com/datasets/muratkokludataset/rice-image-dataset) diunduh via library `kagglehub`.
+* **Total Data & Kelas:** 75.000 gambar resolusi asli $250 \times 250$ piksel (memenuhi kriteria $>1000$ gambar).
+* **Varietas Beras (5 Kelas):** `Arborio`, `Basmati`, `Ipsala`, `Jasmine`, dan `Karacadag`.
+* **Dataset yang Tidak Digunakan:** Menghindari penggunaan dataset yang sudah umum atau pernah digunakan di latihan kelas seperti *Rock, Paper, Scissors* atau *X-Ray* demi menjaga orisinalitas proyek.
+* **Pembagian Dataset (Split):**
+    * **Training Set (80%):** 60.000 gambar (diaplikasikan *Data Augmentation*: `RandomFlip`, `RandomRotation`, `RandomZoom`).
+    * **Validation Set (10%):** 7.500 gambar.
+    * **Test Set (10%):** 7.500 gambar.
 
 ---
 
-## Panduan Instalasi dan Penggunaan
+## 🏗️ Arsitektur Model CNN
 
-### 1. Persiapan Lingkungan
+Sesuai ketentuan, model dibangun menggunakan arsitektur `tf.keras.models.Sequential` dengan memanfaatkan `Conv2D` dan `MaxPooling2D` sebagai basis ekstraksi fitur:
 
-Jalankan perintah berikut pada terminal Linux/WSL Anda untuk menginstal dependensi dasar dan membuat *virtual environment*:
+1.  **Rescaling Layer:** Mengubah rentang nilai piksel dari $[0, 255]$ menjadi $[0, 1]$ dengan resolusi input disesuaikan ke $150 \times 150$ piksel.
+2.  **4 Blok Konvolusi & Pooling:**
+    * `Conv2D` (32 filter, kernel $3 \times 3$, fungsi aktivasi ReLU) + `MaxPooling2D` ($2 \times 2$)
+    * `Conv2D` (64 filter, kernel $3 \times 3$, fungsi aktivasi ReLU) + `MaxPooling2D` ($2 \times 2$)
+    * `Conv2D` (128 filter, kernel $3 \times 3$, fungsi aktivasi ReLU) + `MaxPooling2D` ($2 \times 2$)
+    * `Conv2D` (256 filter, kernel $3 \times 3$, fungsi aktivasi ReLU) + `MaxPooling2D` ($2 \times 2$)
+3.  **Flatten Layer:** Mengubah representasi matriks fitur 2D menjadi vektor 1D.
+4.  **Dense Layers (Fully Connected) dengan Regularisasi:**
+    * `Dense` (512 unit, aktivasi ReLU) + `Dropout` (0.5) untuk mencegah overfitting.
+    * `Dense` (256 unit, aktivasi ReLU) + `Dropout` (0.3) untuk mengurangi kompleksitas model.
+5.  **Output Layer:** `Dense` (5 unit sesuai jumlah varietas beras dengan fungsi aktivasi Softmax).
 
-```
-sudo apt update
-sudo apt install python3 python3-pip python3-venv -y
+---
 
-python3 -m venv venv
-source venv/bin/activate
+## 🚀 Performa & Hasil Pelatihan
 
-pip install --upgrade pip
-pip install -r requirements.txt
-```
+Proses pelatihan menggunakan optimizer **Adam** dengan *learning rate* $0.0001$ dan fungsi *loss* `sparse_categorical_crossentropy`. Pelatihan dikontrol menggunakan *custom callback* (`TargetAccuracyCallback`) yang menghentikan iterasi secara otomatis apabila akurasi *training* dan *validation* telah mencapai atau melampaui target minimal 96%.
 
-### 2. Pengambilan Data (Scraping)
+* **Hasil Plot Akurasi & Loss:** Proses pelatihan divisualisasikan secara lengkap dalam berkas `klasifikasi_gambar.ipynb`. Grafik menunjukkan tren peningkatan akurasi secara konsisten dan penurunan nilai loss yang stabil seiring bertambahnya epoch, membuktikan model tidak mengalami *overfitting* atau *underfitting*.
+* **Lama Pelatihan:** Mencapai target pemenuhan kriteria tinggi hanya dalam **2 Epoch** (berkat arsitektur sekuensial yang efisien dan optimasi pipeline `prefetch`).
+* **Akurasi Training:** 97.33%
+* **Akurasi Validation:** 96.74%
+* **Akurasi Test Set:** **96.06%** *(Sangat jauh melampaui kriteria batas minimal evaluasi sebesar 85%)*
 
-Untuk melakukan *scraping* data terbaru secara mandiri, gunakan script scraping yang telah disediakan untuk mencapai minimal target 3.000 sampel.
+---
 
-```
-python3 scraping.py --mode paginated --target 3000
-```
+## 📁 Struktur Direktori Hasil Ekspor Model
 
-### 3. Menjalankan Pelatihan Model
+Model wajib disimpan dalam berbagai format untuk diintegrasikan ke berbagai platform deployment (Server, Mobile, Web Browser). Model berhasil diekspor ke dalam direktori struktur `submission/` berikut:
 
-Anda dapat mereproduksi hasil pemrosesan dan metrik akurasi dengan menjalankan file `training.ipynb`. Buka Jupyter Notebook dan jalankan semua kode di dalam sel tersebut.
-
-Proses pelatihan ini secara otomatis akan memproses dataset, melatih algoritma, serta menyimpan seluruh *artifacts* model seperti `tfidf_vectorizer.pkl`, `model_svc.pkl`, `model_lr.pkl`, `w2v_model.pkl`, `label_encoder.pkl`, `tokenizer.json`, dan `model_bilstm.keras` ke dalam direktori lokal.
+```text
+submission/
+├── saved_model/
+│   ├── fingerprint.pb
+│   ├── saved_model.pb
+│   └── variables/
+├── tflite/
+│   ├── label.txt
+│   └── model.tflite
+└── tfjs_model/
